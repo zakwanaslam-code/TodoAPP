@@ -2,26 +2,43 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
-
-import dns from 'dns';
-dns.setServers (["1.1.1.1", "8.8.8.8"]);
+import dns from "dns";
+import { protect } from "./middleware/authMiddleware.js";
+import authRoutes from "./routes/authRoutes.js";
 
 dotenv.config();
 
-const app = express();
+const app = express(); // 👈 FIRST app create karo
 
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// MongoDB connect
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Connected"))
-  .catch(err => console.log("DB Error:", err));
+// Routes
+app.use("/api/auth", authRoutes); // 👈 yahan sahi jagah
 
-// Schema
+app.get("/api/auth/profile", protect, (req, res) => {
+  res.json({
+    message: "Protected data accessed",
+    user: req.user,
+  });
+});
+
+// MongoDB Connect
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB Connected"))
+  .catch((err) => console.log("DB Error:", err));
+
+// Todo Schema
 const TodoSchema = new mongoose.Schema({
   title: String,
-  completed: { type: Boolean, default: false }
+  completed: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const Todo = mongoose.model("Todo", TodoSchema);
